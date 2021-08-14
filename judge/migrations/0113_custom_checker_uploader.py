@@ -8,7 +8,7 @@ import judge.utils.problem_data
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0113_public_submission_visibility'),
+        ('judge', '0112_public_submission_visibility'),
     ]
 
     operations = [

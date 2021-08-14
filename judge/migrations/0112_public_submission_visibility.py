@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('judge', '0112_submission_feedback'),
+        ('judge', '0111_blank_assignees_ticket'),
     ]
 
     operations = [
