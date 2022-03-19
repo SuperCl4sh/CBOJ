@@ -204,6 +204,12 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     context_object_name = 'submissions'
     first_page_href = None
 
+    sort_convert = {
+        'time' : 'Total Runtime', 
+        'memory' : 'Memory Usage'
+    }
+    sort_options = [(key, value) for key, value in sort_convert.items()]
+
     def get_result_data(self):
         result = self._get_result_data()
         for category in result['categories']:
@@ -252,7 +258,8 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             queryset = queryset.filter(language__in=Language.objects.filter(key__in=self.selected_languages))
         if self.selected_statuses:
             queryset = queryset.filter(result__in=self.selected_statuses)
-
+        if self.selected_sort_options and any(1 for selected in self.selected_sort_options if selected in self.sort_convert.keys()):
+            queryset = queryset.order_by(*['-' + selected for selected in self.selected_sort_options if selected in self.sort_convert.keys()])
         return queryset
 
     def get_queryset(self):
@@ -289,6 +296,9 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context['all_statuses'] = self.get_searchable_status_codes()
         context['selected_statuses'] = self.selected_statuses
 
+        context['all_sort_options'] = self.sort_options
+        context['selected_sort_options'] = self.selected_sort_options
+
         context['results_json'] = mark_safe(json.dumps(self.get_result_data()))
         context['results_colors_json'] = mark_safe(json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS))
 
@@ -306,6 +316,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
         self.selected_languages = set(request.GET.getlist('language'))
         self.selected_statuses = set(request.GET.getlist('status'))
+        self.selected_sort_options = set(request.GET.getlist('sort'))
 
         if 'results' in request.GET:
             return JsonResponse(self.get_result_data())
