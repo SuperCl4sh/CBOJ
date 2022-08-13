@@ -68,7 +68,7 @@ def get_pp_breakdown(user, start=0, end=settings.DMOJ_PP_ENTRIES, request=None):
         result_class = Submission.result_class_from_code(result, case_points, case_total)
         long_status = Submission.USER_DISPLAY_CODES.get(result, '')
 
-        is_visible_to = 1 if request_user != None and Problem.objects.get(code=code).is_accessible_by(request_user) else 0
+        is_visible_to = (not is_org_private) or (request_user != None and Problem.objects.get(code=code).is_accessible_by(request_user))
 
         breakdown.append(PPBreakdown(
             points=points,
