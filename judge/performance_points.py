@@ -53,8 +53,12 @@ def get_pp_breakdown(user, start=0, end=settings.DMOJ_PP_ENTRIES, request=None):
             LIMIT %s OFFSET %s
         ''', (user.id, user.id, end - start + 1, start))
         data = cursor.fetchall()
+    
+    try:
+        request_user = User.objects.get(username=request.user) if request != None else None
+    except User.DoesNotExist:
+        request_user = None
 
-    request_user = User.objects.get(username=request.user) if request != None else None
     breakdown = []
     for weight, contrib in zip(PP_WEIGHT_TABLE[start:end], data):
         code, name, points, id, date, case_points, case_total, result, lang_short_name, lang_key, is_org_private = contrib
@@ -81,7 +85,7 @@ def get_pp_breakdown(user, start=0, end=settings.DMOJ_PP_ENTRIES, request=None):
             sub_result_class=result_class,
             sub_lang=lang_short_display_name,
             is_private_problem=is_org_private,
-            is_visible_to = is_visible_to,
+            is_visible_to=is_visible_to,
         ))
     has_more = end < min(len(PP_WEIGHT_TABLE), start + len(data))
     return breakdown, has_more
