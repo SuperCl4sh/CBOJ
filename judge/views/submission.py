@@ -205,8 +205,10 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     first_page_href = None
 
     sort_convert = {
-        'time' : 'Total Runtime', 
-        'memory' : 'Memory Usage'
+        'time' : 'Total Runtime (Ascending)', 
+        '-time' : 'Total Runtime (Descending)', 
+        'memory' : 'Memory Usage (Ascending)',
+        '-memory' : 'Memory Usage (Descending)'
     }
     sort_options = [(key, value) for key, value in sort_convert.items()]
 
@@ -230,7 +232,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
     def contest(self):
         return self.request.profile.current_contest.contest
 
-    def _get_queryset(self):
+    def _get_queryset(self, sorting_args=False):
         queryset = Submission.objects.all()
         use_straight_join(queryset)
         queryset = submission_related(queryset.order_by('-id'))
@@ -258,16 +260,15 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
             queryset = queryset.filter(language__in=Language.objects.filter(key__in=self.selected_languages))
         if self.selected_statuses:
             queryset = queryset.filter(result__in=self.selected_statuses)
-        if self.selected_sort_options and any(1 for selected in self.selected_sort_options if selected in self.sort_convert.keys()):
-            queryset = queryset.order_by(*['-' + selected for selected in self.selected_sort_options if selected in self.sort_convert.keys()])
-        return queryset
+        if self.selected_sort_options:
+            queryset = queryset.order_by(*[option for option in self.selected_sort_options if option in self.sort_convert.keys()])
+        return queryset if not sorting_args else (queryset, self.selected_sort_options)
 
-    def get_queryset(self):
-        queryset = self._get_queryset()
-        if not self.in_contest:
-            filter_submissions_by_visible_problems(queryset, self.request.user)
-
-        return queryset
+    def get_queryset(self, sorting_args=False):
+        queryset = self._get_queryset(sorting_args)
+        if sorting_args: queryset, selected_options = queryset
+        if not self.in_contest: filter_submissions_by_visible_problems(queryset, self.request.user)
+        return queryset if not sorting_args else (queryset, selected_options)
 
     def get_my_submissions_page(self):
         return None
@@ -380,10 +381,13 @@ class ProblemSubmissionsBase(SubmissionsListBase):
     dynamic_update = True
     check_contest_in_access_check = True
 
-    def get_queryset(self):
+    def get_queryset(self, sorting_args=False):
         if self.in_contest and not self.contest.contest_problems.filter(problem_id=self.problem.id).exists():
             raise Http404()
-        return super(ProblemSubmissionsBase, self)._get_queryset().filter(problem_id=self.problem.id)
+        queryset = super(ProblemSubmissionsBase, self)._get_queryset(sorting_args)
+        if sorting_args: queryset, selected_options = queryset
+        queryset = queryset.filter(problem_id=self.problem.id)
+        return queryset if not sorting_args else (queryset, selected_options)
 
     def get_title(self):
         return _('All submissions for %s') % self.problem_name

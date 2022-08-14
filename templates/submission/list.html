@@ -84,7 +84,7 @@
                 }).css({'visibility': 'visible'});
 
                 $('#sort').select2({
-                    multiple: 1,
+                    multiple: 0,
                     placeholder: '{{ _('Sort by...') }}',
                     matcher: idAndTextMatcher,
                 }).css({'visibility': 'visible'});
@@ -339,7 +339,10 @@
                             </div>
                             <div class="filter-form-group">
                                 <label for="sort"><i>{{ _('Sort Options') }}</i></label>
-                                <select id="sort" name="sort" multiple>
+                                <select id="sort" name="sort">
+                                    {% if not selected_sort_options %}
+                                        <option value="" disabled selected></option>
+                                    {% endif %}
                                     {% for small, name in all_sort_options %}
                                         <option {% if small in selected_sort_options %}selected{% endif %}
                                                 value="{{ small }}">{{ name }}</option>
